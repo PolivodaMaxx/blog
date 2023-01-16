@@ -23,6 +23,7 @@ export const getAll = async (req, res) => {
     const posts = await PostModel.find()
       .sort({ _id: -1 })
       .populate('user')
+      .populate('comments.userId')
       .exec();
 
     res.json(posts);
@@ -39,6 +40,8 @@ export const getAllPopular = async (req, res) => {
     const posts = await PostModel.find()
       .sort([['viewsCount', 'descending']])
       .populate('user')
+      .populate('comments.userId')
+
       .exec();
     res.json(posts);
   } catch (error) {
@@ -56,6 +59,7 @@ export const getByTags = async (req, res) => {
     const posts = await PostModel.find({ tags: { $eq: tag } })
       .sort({ _id: -1 })
       .populate('user')
+      .populate('comments.userId')
       .exec();
     res.json(posts);
   } catch (error) {
@@ -96,7 +100,46 @@ export const getOne = async (req, res) => {
 
         res.json(doc);
       },
-    ).populate('user');
+    )
+      .populate('user')
+      .populate('comments.userId');
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: 'Не удалось получить статьи',
+    });
+  }
+};
+
+export const leaveComment = async (req, res) => {
+  try {
+    const postId = req.params.id;
+
+    PostModel.findOneAndUpdate(
+      { _id: postId },
+      { $push: { comments: { userId: req.userId, comment: req.body.text } } },
+      {
+        returnDocument: 'after',
+      },
+      (error, doc) => {
+        if (error) {
+          console.log(error);
+          return res.status(500).json({
+            message: 'Не удалось получить статью',
+          });
+        }
+
+        if (!doc) {
+          return res.status(404).json({
+            message: 'Статья не найдена',
+          });
+        }
+
+        res.json(doc);
+      },
+    )
+      .populate('user')
+      .populate('comments.userId');
   } catch (error) {
     console.log(error);
     res.status(500).json({

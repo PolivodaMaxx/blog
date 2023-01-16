@@ -89,6 +89,7 @@ app.patch(
   handleValidationErrors,
   PostController.update,
 );
+app.patch('/posts/comment/:id', checkAuth, PostController.leaveComment);
 
 app.listen(4444, (err) => {
   if (err) {
